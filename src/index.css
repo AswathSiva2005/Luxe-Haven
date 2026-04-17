@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Manrope', sans-serif;
+    color: #ffffff;
+    background-color: #050505;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(212, 175, 55, 0.16) 0%, rgba(5, 5, 5, 0) 40%),
+      radial-gradient(circle at 90% 16%, rgba(255, 255, 255, 0.09) 0%, rgba(5, 5, 5, 0) 35%),
+      #050505;
+    color: #ffffff;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-gold-gradient {
+    background-image: linear-gradient(
+      145deg,
+      #f3df9f 0%,
+      #e4c97a 32%,
+      #b88e3a 55%,
+      #f2db95 82%,
+      #a5752b 100%
+    );
+  }
+
+  .shadow-gold {
+    box-shadow:
+      0 8px 20px rgba(198, 158, 67, 0.35),
+      inset 0 1px 0 rgba(255, 246, 214, 0.45);
+  }
+
+  .shadow-gold-glow {
+    box-shadow:
+      0 12px 34px rgba(198, 158, 67, 0.4),
+      0 0 0 1px rgba(255, 226, 143, 0.3);
+  }
+
+  .logo-red-rotate-line {
+    position: relative;
+    display: block;
+    padding: 3px;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .logo-red-rotate-line::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: 0;
+    background: conic-gradient(
+      from 0deg,
+      rgba(165, 242, 243, 0) 0deg,
+      rgba(165, 242, 243, 0) 280deg,
+      #a5f2f3 335deg,
+      rgba(165, 242, 243, 0) 360deg
+    );
+    animation: rotate-red-line 7.2s linear infinite;
+  }
+
+  .logo-red-rotate-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    z-index: 0;
+    background: conic-gradient(
+      from 180deg,
+      rgba(165, 242, 243, 0) 0deg,
+      rgba(165, 242, 243, 0) 280deg,
+      #a5f2f3 335deg,
+      rgba(165, 242, 243, 0) 360deg
+    );
+    animation: rotate-red-line-reverse 7.2s linear infinite;
+  }
+
+  @keyframes rotate-red-line {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes rotate-red-line-reverse {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(-360deg);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
