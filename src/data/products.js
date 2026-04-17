@@ -1,4 +1,9 @@
-import { createCategoryArtwork, createProductArtwork } from '../lib/placeholders'
+import { createCategoryArtwork } from '../lib/placeholders'
+import productOneImage from '../assets/product images/1.webp'
+import productTwoImage from '../assets/product images/2.webp'
+import productThreeImage from '../assets/product images/3.webp'
+import productFourImage from '../assets/product images/4.webp'
+import skyBlueImage from '../assets/product images/sky blue t.png'
 
 export const categoryArtwork = {
   tshirt: createCategoryArtwork({
@@ -14,5 +19,88 @@ export const categoryArtwork = {
 }
 
 export const productCatalog = [
-
+  {
+    id: 'cat-tshirt-001',
+    name: 'Classic Black Tee',
+    category: 'tshirt',
+    style: 'classic',
+    sizes: ['S', 'M', 'L', 'XL'],
+    mrp: 1299,
+    salePrice: 999,
+    colorName: 'Black',
+    colorHex: '#111111',
+    description: 'Everyday premium cotton tee with clean structure and smooth hand feel.',
+    image: productOneImage,
+    images: [productOneImage, productTwoImage],
+  },
+  {
+    id: 'cat-tshirt-002',
+    name: 'Urban White Tee',
+    category: 'tshirt',
+    style: 'classic',
+    sizes: ['M', 'L', 'XL'],
+    mrp: 1399,
+    salePrice: 1099,
+    colorName: 'White',
+    colorHex: '#f4f4f4',
+    description: 'Soft-touch white t-shirt designed for a refined minimal look.',
+    image: productTwoImage,
+    images: [productTwoImage, productThreeImage],
+  },
+  {
+    id: 'cat-tshirt-003',
+    name: 'Sky Blue Signature Tee',
+    category: 'tshirt',
+    style: 'polo',
+    sizes: ['S', 'M', 'L'],
+    mrp: 1499,
+    salePrice: 1199,
+    colorName: 'Sky Blue',
+    colorHex: '#88bfff',
+    description: 'Fresh sky blue drop with premium stitching and breathable fabric.',
+    image: skyBlueImage,
+    images: [skyBlueImage, productOneImage],
+  },
+  {
+    id: 'cat-over-001',
+    name: 'Oversized Street Black',
+    category: 'oversized',
+    style: 'street',
+    sizes: ['M', 'L', 'XL', 'XXL'],
+    mrp: 1599,
+    salePrice: 1299,
+    colorName: 'Black',
+    colorHex: '#0d0d0d',
+    description: 'Relaxed silhouette oversized tee built for everyday street styling.',
+    image: productThreeImage,
+    images: [productThreeImage, productFourImage],
+  },
+  {
+    id: 'cat-over-002',
+    name: 'Oversized Chalk White',
+    category: 'oversized',
+    style: 'street',
+    sizes: ['S', 'M', 'L', 'XL'],
+    mrp: 1699,
+    salePrice: 1399,
+    colorName: 'Off White',
+    colorHex: '#f0ece2',
+    description: 'Heavyweight oversized tee with premium drape and modern edge.',
+    image: productFourImage,
+    images: [productFourImage, productTwoImage],
+  },
+  {
+    id: 'cat-over-003',
+    name: 'Oversized Gold Edition',
+    category: 'oversized',
+    style: 'graphic',
+    sizes: ['M', 'L', 'XL'],
+    mrp: 1799,
+    salePrice: 1499,
+    colorName: 'Gold',
+    colorHex: '#c59c41',
+    description: 'Statement oversized piece inspired by Luxe Haven signature palette.',
+    image: productOneImage,
+    images: [productOneImage, skyBlueImage],
+  },
 ]
