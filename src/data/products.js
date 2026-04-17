@@ -1,9 +1,12 @@
 import { createCategoryArtwork } from '../lib/placeholders'
-import productOneImage from '../assets/product images/1.webp'
-import productTwoImage from '../assets/product images/2.webp'
-import productThreeImage from '../assets/product images/3.webp'
-import productFourImage from '../assets/product images/4.webp'
-import skyBlueImage from '../assets/product images/sky blue t.png'
+import tshirtImageOne from '../assets/product images/t1.webp'
+import tshirtImageTwo from '../assets/product images/t2.webp'
+import tshirtImageThree from '../assets/product images/t3.webp'
+import tshirtImageFour from '../assets/product images/t4.webp'
+import oversizedImageOne from '../assets/product images/o1.png'
+import oversizedImageTwo from '../assets/product images/o2.png'
+import oversizedImageThree from '../assets/product images/o3.png'
+import oversizedImageFour from '../assets/product images/o4.png'
 
 export const categoryArtwork = {
   tshirt: createCategoryArtwork({
@@ -30,8 +33,8 @@ export const productCatalog = [
     colorName: 'Black',
     colorHex: '#111111',
     description: 'Everyday premium cotton tee with clean structure and smooth hand feel.',
-    image: productOneImage,
-    images: [productOneImage, productTwoImage],
+    image: tshirtImageOne,
+    images: [tshirtImageOne, tshirtImageTwo],
   },
   {
     id: 'cat-tshirt-002',
@@ -44,8 +47,8 @@ export const productCatalog = [
     colorName: 'White',
     colorHex: '#f4f4f4',
     description: 'Soft-touch white t-shirt designed for a refined minimal look.',
-    image: productTwoImage,
-    images: [productTwoImage, productThreeImage],
+    image: tshirtImageTwo,
+    images: [tshirtImageTwo, tshirtImageThree],
   },
   {
     id: 'cat-tshirt-003',
@@ -58,8 +61,8 @@ export const productCatalog = [
     colorName: 'Sky Blue',
     colorHex: '#88bfff',
     description: 'Fresh sky blue drop with premium stitching and breathable fabric.',
-    image: skyBlueImage,
-    images: [skyBlueImage, productOneImage],
+    image: tshirtImageThree,
+    images: [tshirtImageThree, tshirtImageFour],
   },
   {
     id: 'cat-over-001',
@@ -72,8 +75,8 @@ export const productCatalog = [
     colorName: 'Black',
     colorHex: '#0d0d0d',
     description: 'Relaxed silhouette oversized tee built for everyday street styling.',
-    image: productThreeImage,
-    images: [productThreeImage, productFourImage],
+    image: oversizedImageOne,
+    images: [oversizedImageOne, oversizedImageTwo],
   },
   {
     id: 'cat-over-002',
@@ -86,8 +89,8 @@ export const productCatalog = [
     colorName: 'Off White',
     colorHex: '#f0ece2',
     description: 'Heavyweight oversized tee with premium drape and modern edge.',
-    image: productFourImage,
-    images: [productFourImage, productTwoImage],
+    image: oversizedImageThree,
+    images: [oversizedImageThree, oversizedImageFour],
   },
   {
     id: 'cat-over-003',
@@ -100,7 +103,7 @@ export const productCatalog = [
     colorName: 'Gold',
     colorHex: '#c59c41',
     description: 'Statement oversized piece inspired by Luxe Haven signature palette.',
-    image: productOneImage,
-    images: [productOneImage, skyBlueImage],
+    image: oversizedImageTwo,
+    images: [oversizedImageTwo, tshirtImageOne],
   },
 ]
