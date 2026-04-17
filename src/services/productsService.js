@@ -1,6 +1,12 @@
 import { productCatalog } from '../data/products'
 import { createProductArtwork } from '../lib/placeholders'
-import { appendStoredProduct, loadStoredProducts, removeStoredProduct, updateStoredProduct } from '../lib/storage'
+import {
+  appendStoredProduct,
+  loadStoredProducts,
+  removeStoredProduct,
+  saveStoredProducts,
+  updateStoredProduct,
+} from '../lib/storage'
 
 const priceBrackets = {
   budget: [0, 1000],
@@ -10,11 +16,68 @@ const priceBrackets = {
 
 export async function fetchProducts() {
   const storedProducts = loadStoredProducts()
-  return Promise.resolve([...productCatalog, ...storedProducts].map(normalizeProduct))
+  const normalizedStored = storedProducts.map(normalizeProduct)
+  const mergedStored = mergeDuplicateProducts(normalizedStored)
+
+  if (mergedStored.length !== normalizedStored.length) {
+    saveStoredProducts(mergedStored)
+  }
+
+  return Promise.resolve([...productCatalog, ...mergedStored].map(normalizeProduct))
 }
 
 export async function fetchAdminProducts() {
-  return Promise.resolve(loadStoredProducts().map(normalizeProduct))
+  const normalizedStored = loadStoredProducts().map(normalizeProduct)
+  const mergedStored = mergeDuplicateProducts(normalizedStored)
+
+  if (mergedStored.length !== normalizedStored.length) {
+    saveStoredProducts(mergedStored)
+  }
+
+  return Promise.resolve(mergedStored)
+}
+
+function buildMergeKey(product) {
+  const sizes = Array.isArray(product.sizes) ? [...product.sizes].sort().join('|') : ''
+
+  return [
+    product.name?.trim().toLowerCase(),
+    product.category,
+    product.style,
+    sizes,
+    Number(product.mrp ?? 0),
+    Number(product.salePrice ?? product.price ?? 0),
+    product.colorName?.trim().toLowerCase(),
+    product.colorHex?.trim().toLowerCase(),
+    product.description?.trim().toLowerCase(),
+    product.source,
+  ].join('::')
+}
+
+function mergeDuplicateProducts(products) {
+  const mergedByKey = new Map()
+
+  for (const product of products) {
+    const key = buildMergeKey(product)
+    const existing = mergedByKey.get(key)
+
+    if (!existing) {
+      mergedByKey.set(key, product)
+      continue
+    }
+
+    const combinedImages = Array.from(
+      new Set([...(existing.images || []), existing.image, ...(product.images || []), product.image].filter(Boolean)),
+    ).slice(0, 5)
+
+    mergedByKey.set(key, {
+      ...existing,
+      image: combinedImages[0] || existing.image,
+      images: combinedImages.length ? combinedImages : [existing.image].filter(Boolean),
+    })
+  }
+
+  return Array.from(mergedByKey.values())
 }
 
 export function getFilterOptions(products, category) {
