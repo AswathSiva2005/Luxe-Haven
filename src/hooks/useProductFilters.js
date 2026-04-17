@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   fetchProducts,
@@ -48,19 +48,21 @@ export function useProductFilters() {
       )
   }, [allProducts, selectedCategory, filters])
 
-  const selectCategory = (category) => {
+  const selectCategory = useCallback((category) => {
     setSelectedCategory(category)
     setFilters(baseFilters)
-  }
+  }, [])
 
-  const clearCategory = () => {
+  const clearCategory = useCallback(() => {
     setSelectedCategory(null)
     setFilters(baseFilters)
-  }
+  }, [])
 
-  const setFilter = (key, value) => {
+  const setFilter = useCallback((key, value) => {
     setFilters((previous) => ({ ...previous, [key]: value }))
-  }
+  }, [])
+
+  const resetFilters = useCallback(() => setFilters(baseFilters), [])
 
   return {
     selectedCategory,
@@ -70,6 +72,6 @@ export function useProductFilters() {
     selectCategory,
     clearCategory,
     setFilter,
-    resetFilters: () => setFilters(baseFilters),
+    resetFilters,
   }
 }

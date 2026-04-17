@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 
 import { useProductFilters } from '../../hooks/useProductFilters'
 import { CategoryCards } from '../product/CategoryCards'
 import { FilterPanel } from '../product/FilterPanel'
 import { ProductGrid } from '../product/ProductGrid'
 
-export function ProductsSection() {
+export function ProductsSection({ onCategoryActiveChange }) {
   const MotionContainer = motion.div
 
   const {
@@ -18,6 +19,29 @@ export function ProductsSection() {
     setFilter,
     resetFilters,
   } = useProductFilters()
+
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 767px)').matches
+    if (!selectedCategory || !isMobile) return
+
+    const state = window.history.state ?? {}
+    window.history.pushState({ ...state, luxeCategoryView: true }, '', window.location.href)
+
+    const handlePopState = () => {
+      clearCategory()
+      requestAnimationFrame(() => {
+        const categoriesSection = document.querySelector('#categories')
+        categoriesSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [selectedCategory, clearCategory])
+
+  useEffect(() => {
+    onCategoryActiveChange?.(Boolean(selectedCategory), clearCategory)
+  }, [selectedCategory, clearCategory, onCategoryActiveChange])
 
   return (
     <section id="products" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">

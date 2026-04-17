@@ -4,9 +4,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 import { Card } from '../ui/card'
+import ceoProfile from '../../assets/company details/profile.jpeg'
 
 export function ProductGrid({ products }) {
   const MotionItem = motion.div
+  const contactName = 'Harishwa'
+  const contactNumber = '+91 82200 49559'
+  const contactDialNumber = '+918220049559'
   const [parent, enable] = useAutoAnimate()
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
@@ -54,14 +58,14 @@ export function ProductGrid({ products }) {
   }
 
   return (
-    <div ref={parent} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div ref={parent} className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
       {products.map((product, index) => (
         <MotionItem
           key={product.id}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: index * 0.05 }}
-          className="animate__animated animate__fadeIn mx-auto w-full max-w-[300px]"
+          className="animate__animated animate__fadeIn w-full"
         >
           <button
             type="button"
@@ -220,6 +224,28 @@ export function ProductGrid({ products }) {
                             {selectedProduct.description}
                           </p>
                         ) : null}
+
+                        <div className="mt-5 rounded-xl border border-gold-300/25 bg-black/45 p-3">
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-gold-300">
+                            Contact for Order
+                          </p>
+                          <div className="mt-3 flex items-center gap-3">
+                            <img
+                              src={ceoProfile}
+                              alt={`${contactName} profile`}
+                              className="h-12 w-12 rounded-full border border-gold-300/45 object-cover"
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-white">{contactName}</span>
+                              <a
+                                href={`tel:${contactDialNumber}`}
+                                className="text-sm text-gold-200 underline-offset-4 hover:underline"
+                              >
+                                {contactNumber}
+                              </a>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </>
