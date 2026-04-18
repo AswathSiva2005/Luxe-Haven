@@ -4,7 +4,7 @@ import { gsap } from 'gsap'
 
 import { Button } from '../ui/button'
 import heroVideo from '../../assets/background video/videoplayback.webm'
-import brandLogo from '../../assets/company details/logo.jpeg'
+import brandLogo from '../../assets/company details/logo.png'
 
 export function HeroSection() {
   const titleRef = useRef(null)
@@ -50,7 +50,7 @@ export function HeroSection() {
             viewport={{ once: true }}
             className="animate__animated animate__fadeInUp text-xs uppercase tracking-[0.5em] text-gold-300"
           >
-          Where luxury meets fashion
+          Custom Knitwear Manufacturer
           </MotionParagraph>
 
           <h1
@@ -64,9 +64,9 @@ export function HeroSection() {
             ref={subtitleRef}
             className="font-display mt-6 max-w-2xl text-base tracking-[0.08em] text-white/85 sm:text-[1.1rem]"
           >
-            Luxury Menswear 💎
+            220–300 GSM T-Shirts | Bulk Orders | Tiruppur
             <br />
-            Tailored Elegance  | Premium Quality   | TN Delivery
+            Get Quote on WhatsApp
           </p>
 
           <MotionContainer
@@ -77,7 +77,7 @@ export function HeroSection() {
             className="mt-10 flex flex-wrap gap-4"
           >
             <a href="#products">
-              <Button size="lg">Shop Collection</Button>
+              <Button size="lg">Our Products</Button>
             </a>
             <a href="#wholesale">
               <Button variant="ghost" size="lg">
@@ -87,7 +87,7 @@ export function HeroSection() {
           </MotionContainer>
         </div>
 
-        <div className="logo-red-rotate-line mx-auto w-full max-w-md rounded-3xl">
+        <div className="logo-red-rotate-line mx-auto w-full max-w-lg rounded-3xl lg:max-w-xl">
           <img
             src={brandLogo}
             alt="Luxe Haven brand logo"

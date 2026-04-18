@@ -1,8 +1,10 @@
 import { useState } from 'react'
 
-import { AboutSection } from '../components/sections/AboutSection'
 import { ContactSection } from '../components/sections/ContactSection'
+import { FabricSection } from '../components/sections/FabricSection'
 import { HeroSection } from '../components/sections/HeroSection'
+import { OurWorksSection } from '../components/sections/OurWorksSection'
+import { PrintingSection } from '../components/sections/PrintingSection'
 import { ProductsSection } from '../components/sections/ProductsSection'
 import { WholesaleSection } from '../components/sections/WholesaleSection'
 import { Navbar } from '../components/layout/Navbar'
@@ -39,16 +41,12 @@ export function HomePage() {
       <TopLoadingBar />
       <Navbar onNavigate={handleNavbarNavigate} />
       <main className="overflow-hidden">
-        {!isCategoryActive ? (
-          <>
-            <HeroSection />
-            <div className="-mt-10 sm:-mt-14">
-              <AboutSection />
-            </div>
-          </>
-        ) : null}
+        {!isCategoryActive ? <HeroSection /> : null}
         <ProductsSection onCategoryActiveChange={handleCategoryStateChange} />
+        {!isCategoryActive ? <FabricSection /> : null}
+        {!isCategoryActive ? <PrintingSection /> : null}
         {!isCategoryActive ? <WholesaleSection /> : null}
+        {!isCategoryActive ? <OurWorksSection /> : null}
       </main>
       {!isCategoryActive ? <ContactSection /> : null}
     </div>

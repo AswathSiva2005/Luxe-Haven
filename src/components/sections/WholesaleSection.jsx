@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 
 import { Button } from '../ui/button'
-import wholesaleImage from '../../assets/company details/wholesale.jpg'
+import wholesaleImage from '../../assets/company details/wholesale.PNG'
 
 export function WholesaleSection() {
   const MotionContainer = motion.div
@@ -47,12 +47,17 @@ export function WholesaleSection() {
         <div className="grid items-stretch gap-5 lg:grid-cols-[1fr_0.95fr] lg:gap-6">
           <div className="rounded-2xl border border-white/10 bg-black/30 p-5 sm:p-7">
             <p className="text-xs uppercase tracking-[0.35em] text-gold-300">
-              Wholesale and Jersey Program
+              Production and Jersey Program
             </p>
             <p className="mt-4 max-w-2xl text-sm text-white/75">
               Luxe Haven supports wholesale batches with custom sizing curves,
               streamlined production windows, and private-label finishing.
             </p>
+            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-white/80">
+              <li>MOQ: 25 Pieces</li>
+              <li>Production Capacity: 300-1000 pieces per month</li>
+              <li>Production Time: 5-7 days</li>
+            </ul>
 
             <div className="mt-8 flex flex-wrap gap-4">
               <a
@@ -60,7 +65,7 @@ export function WholesaleSection() {
                 target="_blank"
                 rel="noreferrer"
               >
-                <Button size="lg">Request Wholesale Catalog</Button>
+                <Button size="lg">Request Production Catalog</Button>
               </a>
               <a
                 href={`tel:${dialNumber}`}
@@ -79,7 +84,7 @@ export function WholesaleSection() {
           <div className="relative min-h-[280px] overflow-hidden rounded-2xl border border-white/10 bg-black/30">
             <img
               src={wholesaleImage}
-              alt="Luxe Haven wholesale"
+              alt="Luxe Haven production"
               className="h-full w-full object-cover"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent" />

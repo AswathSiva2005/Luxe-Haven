@@ -3,10 +3,12 @@ import { Menu, X } from 'lucide-react'
 
 const navItems = [
   { label: 'Home', href: '#home' },
-  { label: 'About', href: '#about' },
   // { label: 'Categories', href: '#categories' },
   { label: 'Products', href: '#products' },
+  { label: 'Fabrics', href: '#fabric' },
+  { label: 'Printing', href: '#printing' },
   { label: 'Wholesale', href: '#wholesale' },
+  { label: 'Our Works', href: '#our-work' },
   { label: 'Contact', href: '#contact' },
 ]
 
