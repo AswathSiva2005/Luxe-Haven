@@ -4,11 +4,12 @@ http://localhost:5173/admin - admin / luxe123
 
 ## Public Product Images
 
-Admin uploads now go to public cloud image storage instead of staying in the browser.
+Admin uploads now go through the hosted API at `/api/upload-product-image`, which forwards files to Cloudinary and returns a public URL.
 
-Set these environment variables before running or deploying:
+Set these environment variables on your deployment or local serverless runtime:
 
-- `VITE_CLOUDINARY_CLOUD_NAME`
-- `VITE_CLOUDINARY_UPLOAD_PRESET`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
 
-The upload preset must allow unsigned uploads for this front-end-only setup.
+The client no longer needs a Cloudinary upload preset.

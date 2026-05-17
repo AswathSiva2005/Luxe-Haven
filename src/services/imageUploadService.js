@@ -1,26 +1,16 @@
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-
-function getCloudinaryUploadUrl() {
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
-    throw new Error(
-      'Missing Cloudinary config. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET.',
-    )
-  }
-
-  return `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
-}
-
 export async function uploadProductImage(file) {
-  const uploadUrl = getCloudinaryUploadUrl()
-  const formData = new FormData()
+  const imageData = await readFileAsDataUrl(file)
 
-  formData.append('file', file)
-  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
-
-  const response = await fetch(uploadUrl, {
+  const response = await fetch('/api/upload-product-image', {
     method: 'POST',
-    body: formData,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      imageData,
+      fileName: file.name,
+      mimeType: file.type,
+    }),
   })
 
   if (!response.ok) {
@@ -34,4 +24,20 @@ export async function uploadProductImage(file) {
   }
 
   return result.secure_url
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+
+    reader.onload = () => {
+      resolve(typeof reader.result === 'string' ? reader.result : '')
+    }
+
+    reader.onerror = () => {
+      reject(new Error('Could not read the selected image.'))
+    }
+
+    reader.readAsDataURL(file)
+  })
 }
