@@ -18,7 +18,13 @@ const [{ default: adminLoginHandler }, { default: productsHandler }, { default: 
   ])
 
 const vite = await createViteServer({
-  server: { middlewareMode: true },
+  server: {
+    middlewareMode: true,
+    hmr: {
+      port: 24679,
+      host: 'localhost',
+    },
+  },
   appType: 'spa',
 })
 
@@ -61,9 +67,10 @@ const server = http.createServer(async (request, response) => {
   vite.middlewares(request, response, () => {})
 })
 
-server.listen(5173, () => {
-  console.log('Dev server running at http://localhost:5173')
-})
+const preferredPort = Number(process.env.PORT || 5173)
+const activePort = await listenOnAvailablePort(server, preferredPort)
+
+console.log(`Dev server running at http://localhost:${activePort}`)
 
 function loadLocalEnv(filePath) {
   if (!fs.existsSync(filePath)) return
@@ -144,4 +151,29 @@ function createResponseAdapter(response) {
       response.end(String(payload ?? ''))
     },
   }
+}
+
+function listenOnAvailablePort(serverInstance, startPort) {
+  return new Promise((resolve, reject) => {
+    const tryListen = (port) => {
+      const onError = (error) => {
+        serverInstance.removeListener('error', onError)
+
+        if (error.code === 'EADDRINUSE') {
+          tryListen(port + 1)
+          return
+        }
+
+        reject(error)
+      }
+
+      serverInstance.once('error', onError)
+      serverInstance.listen(port, () => {
+        serverInstance.removeListener('error', onError)
+        resolve(port)
+      })
+    }
+
+    tryListen(startPort)
+  })
 }
