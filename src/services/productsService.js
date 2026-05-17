@@ -1,7 +1,6 @@
 import { productCatalog } from '../data/products'
 import { createProductArtwork } from '../lib/placeholders'
 import {
-  appendStoredProduct,
   isProductDeleted,
   markProductDeleted,
   loadStoredProducts,
@@ -20,17 +19,40 @@ export async function fetchProducts() {
   const storedProducts = loadStoredProducts()
   const normalizedStored = storedProducts.map(normalizeProduct)
   const mergedStored = mergeDuplicateProducts(normalizedStored)
-  const visibleStored = mergedStored.filter((product) => !isProductDeleted(product.id))
+  const storedByKey = new Map(
+    mergedStored
+      .filter((product) => !isProductDeleted(product.id))
+      .map((product) => [buildMergeKey(product), product]),
+  )
 
   if (mergedStored.length !== normalizedStored.length) {
     saveStoredProducts(mergedStored)
   }
 
-  return Promise.resolve(
-    [...productCatalog, ...visibleStored]
-      .map(normalizeProduct)
-      .filter((product) => !isProductDeleted(product.id)),
-  )
+  const publicProducts = []
+  const seenKeys = new Set()
+
+  for (const catalogProduct of productCatalog.map(normalizeProduct)) {
+    const key = buildMergeKey(catalogProduct)
+    if (isProductDeleted(key) || isProductDeleted(catalogProduct.id)) {
+      seenKeys.add(key)
+      continue
+    }
+
+    const override = storedByKey.get(key)
+    const product = override ?? catalogProduct
+    publicProducts.push(product)
+    seenKeys.add(key)
+  }
+
+  for (const storedProduct of mergedStored) {
+    const key = buildMergeKey(storedProduct)
+    if (seenKeys.has(key)) continue
+    if (isProductDeleted(key) || isProductDeleted(storedProduct.id)) continue
+    publicProducts.push(storedProduct)
+  }
+
+  return Promise.resolve(publicProducts)
 }
 
 export async function fetchAdminProducts() {
@@ -158,7 +180,17 @@ export function normalizeProduct(product) {
 
 export function saveAdminProduct(product) {
   const normalizedProduct = normalizeProduct(product)
-  appendStoredProduct(normalizedProduct)
+
+  const currentProducts = loadStoredProducts().map(normalizeProduct)
+  const nextProducts = currentProducts.some((existing) => existing.id === normalizedProduct.id)
+    ? currentProducts.map((existing) => (existing.id === normalizedProduct.id ? normalizedProduct : existing))
+    : currentProducts.some((existing) => buildMergeKey(existing) === buildMergeKey(normalizedProduct))
+      ? currentProducts.map((existing) =>
+          buildMergeKey(existing) === buildMergeKey(normalizedProduct) ? normalizedProduct : existing,
+        )
+      : [...currentProducts, normalizedProduct]
+
+  saveStoredProducts(nextProducts)
   return normalizedProduct
 }
 
@@ -169,6 +201,14 @@ export function editAdminProduct(productId, updates) {
 }
 
 export function deleteAdminProduct(productId) {
+  const storedProduct = loadStoredProducts().map(normalizeProduct).find((product) => product.id === productId)
+  const deletedKey = storedProduct ? buildMergeKey(storedProduct) : null
+
   removeStoredProduct(productId)
+
+  if (deletedKey) {
+    markProductDeleted(deletedKey)
+  }
+
   markProductDeleted(productId)
 }

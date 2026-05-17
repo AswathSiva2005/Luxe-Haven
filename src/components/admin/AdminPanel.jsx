@@ -225,6 +225,11 @@ export function AdminPanel() {
   }
 
   const handleDeleteProduct = (productId) => {
+    const confirmed = window.confirm('Delete this product? This will remove it from the public portfolio view.')
+    if (!confirmed) {
+      return
+    }
+
     deleteAdminProduct(productId)
     fetchAdminProducts().then(setProducts)
     if (editingId === productId) {
