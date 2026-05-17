@@ -1,4 +1,3 @@
-import { productCatalog } from '../data/products'
 import { createProductArtwork } from '../lib/placeholders'
 import {
   isProductDeleted,
