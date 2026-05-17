@@ -5,6 +5,7 @@ import {
   getFilterOptions,
   isInPriceBracket,
 } from '../services/productsService'
+import { PRODUCTS_CHANGED_EVENT } from '../lib/storage'
 
 const baseFilters = {
   style: 'all',
@@ -19,7 +20,30 @@ export function useProductFilters() {
   const [filters, setFilters] = useState(baseFilters)
 
   useEffect(() => {
-    fetchProducts().then(setAllProducts)
+    let isActive = true
+
+    const loadProducts = () => {
+      fetchProducts().then((products) => {
+        if (isActive) {
+          setAllProducts(products)
+        }
+      })
+    }
+
+    loadProducts()
+
+    const handleProductsChanged = () => {
+      loadProducts()
+    }
+
+    window.addEventListener('storage', handleProductsChanged)
+    window.addEventListener(PRODUCTS_CHANGED_EVENT, handleProductsChanged)
+
+    return () => {
+      isActive = false
+      window.removeEventListener('storage', handleProductsChanged)
+      window.removeEventListener(PRODUCTS_CHANGED_EVENT, handleProductsChanged)
+    }
   }, [])
 
   const filterOptions = useMemo(() => {

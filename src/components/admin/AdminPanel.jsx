@@ -14,6 +14,7 @@ import {
   normalizeProduct,
   saveAdminProduct,
 } from '../../services/productsService'
+import { uploadProductImage } from '../../services/imageUploadService'
 
 const demoCredentials = {
   username: 'admin',
@@ -98,16 +99,10 @@ export function AdminPanel() {
 
     Promise.all(
       filesToRead.map(
-        (file) =>
-          new Promise((resolve) => {
-            const reader = new FileReader()
-            reader.onload = () => {
-              resolve(typeof reader.result === 'string' ? reader.result : '')
-            }
-            reader.readAsDataURL(file)
-          }),
+        (file) => uploadProductImage(file),
       ),
-    ).then((uploadedImages) => {
+    )
+      .then((uploadedImages) => {
       setForm((current) => {
         const mergedImages = [...current.images, ...uploadedImages.filter(Boolean)].filter(Boolean)
         const uniqueOrderedImages = []
@@ -127,7 +122,10 @@ export function AdminPanel() {
           image: uniqueOrderedImages[0] || current.image,
         }
       })
-    })
+      })
+      .catch((error) => {
+        setMessage(error instanceof Error ? error.message : 'Image upload failed.')
+      })
 
     event.target.value = ''
   }
@@ -180,7 +178,11 @@ export function AdminPanel() {
     fetchAdminProducts().then(setProducts)
     setForm(initialFormState)
     setEditingId('')
-    setMessage(editingId ? `Updated ${nextProduct.name}.` : 'Product saved locally. It now appears on the public products page.')
+    setMessage(
+      editingId
+        ? `Updated ${nextProduct.name}.`
+        : 'Product saved to public image storage. It now appears on the public products page.',
+    )
   }
 
   const handleEditProduct = (product) => {

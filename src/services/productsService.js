@@ -2,6 +2,8 @@ import { productCatalog } from '../data/products'
 import { createProductArtwork } from '../lib/placeholders'
 import {
   appendStoredProduct,
+  isProductDeleted,
+  markProductDeleted,
   loadStoredProducts,
   removeStoredProduct,
   saveStoredProducts,
@@ -18,17 +20,22 @@ export async function fetchProducts() {
   const storedProducts = loadStoredProducts()
   const normalizedStored = storedProducts.map(normalizeProduct)
   const mergedStored = mergeDuplicateProducts(normalizedStored)
+  const visibleStored = mergedStored.filter((product) => !isProductDeleted(product.id))
 
   if (mergedStored.length !== normalizedStored.length) {
     saveStoredProducts(mergedStored)
   }
 
-  return Promise.resolve([...productCatalog, ...mergedStored].map(normalizeProduct))
+  return Promise.resolve(
+    [...productCatalog, ...visibleStored]
+      .map(normalizeProduct)
+      .filter((product) => !isProductDeleted(product.id)),
+  )
 }
 
 export async function fetchAdminProducts() {
   const normalizedStored = loadStoredProducts().map(normalizeProduct)
-  const mergedStored = mergeDuplicateProducts(normalizedStored)
+  const mergedStored = mergeDuplicateProducts(normalizedStored).filter((product) => !isProductDeleted(product.id))
 
   if (mergedStored.length !== normalizedStored.length) {
     saveStoredProducts(mergedStored)
@@ -163,4 +170,5 @@ export function editAdminProduct(productId, updates) {
 
 export function deleteAdminProduct(productId) {
   removeStoredProduct(productId)
+  markProductDeleted(productId)
 }
