@@ -5,14 +5,17 @@ import { fileURLToPath } from 'node:url'
 
 import { createServer as createViteServer } from 'vite'
 
-import adminLoginHandler from './api/admin-login.js'
-import productsHandler from './api/products.js'
-import uploadProductImageHandler from './api/upload-product-image.js'
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 loadLocalEnv(path.join(__dirname, '.env.local'))
+
+const [{ default: adminLoginHandler }, { default: productsHandler }, { default: uploadProductImageHandler }] =
+  await Promise.all([
+    import('./api/admin-login.js'),
+    import('./api/products.js'),
+    import('./api/upload-product-image.js'),
+  ])
 
 const vite = await createViteServer({
   server: { middlewareMode: true },
