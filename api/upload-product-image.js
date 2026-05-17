@@ -1,12 +1,66 @@
-import crypto from 'node:crypto'
+import { Buffer } from 'node:buffer'
 
-function createCloudinaryAuthHeader(apiKey, apiSecret) {
-  const token = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')
-  return `Basic ${token}`
+import { ObjectId } from 'mongodb'
+
+import { getMongoDatabase } from './_lib/mongodb.js'
+
+function parseDataUrl(imageData) {
+  const match = /^data:([^;]+);base64,(.+)$/.exec(imageData)
+
+  if (!match) {
+    return null
+  }
+
+  return {
+    mimeType: match[1],
+    buffer: Buffer.from(match[2], 'base64'),
+  }
+}
+
+async function streamStoredImage(request, response) {
+  const { id } = request.query ?? {}
+
+  if (typeof id !== 'string' || !id.trim()) {
+    response.status(400).json({ error: 'Image id is required.' })
+    return
+  }
+
+  let objectId
+
+  try {
+    objectId = new ObjectId(id)
+  } catch {
+    response.status(400).json({ error: 'Invalid image id.' })
+    return
+  }
+
+  const db = await getMongoDatabase()
+  const storedImage = await db.collection('product_images').findOne({ _id: objectId })
+
+  if (!storedImage) {
+    response.status(404).json({ error: 'Image not found.' })
+    return
+  }
+
+  const parsedImage = parseDataUrl(storedImage.imageData)
+
+  if (!parsedImage) {
+    response.status(500).json({ error: 'Stored image data is invalid.' })
+    return
+  }
+
+  response.setHeader('Content-Type', storedImage.mimeType || parsedImage.mimeType || 'application/octet-stream')
+  response.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+  response.status(200).send(parsedImage.buffer)
 }
 
 export default async function handler(request, response) {
   try {
+    if (request.method === 'GET') {
+      await streamStoredImage(request, response)
+      return
+    }
+
     if (request.method !== 'POST') {
       response.status(405).json({ error: 'Method not allowed' })
       return
@@ -19,51 +73,31 @@ export default async function handler(request, response) {
       return
     }
 
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'demo'
-    const apiKey = process.env.CLOUDINARY_API_KEY || ''
-    const apiSecret = process.env.CLOUDINARY_API_SECRET || ''
-    const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET || 'docs_upload_example_us_preset'
-    const isConfigured = Boolean(process.env.CLOUDINARY_CLOUD_NAME && apiKey && apiSecret)
+    const parsedImage = parseDataUrl(imageData)
 
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`
-    const formData = new FormData()
-
-    formData.append('file', imageData)
-
-    if (isConfigured) {
-      formData.append('folder', 'luxe-haven/products')
-      formData.append('public_id', `luxe-haven-${crypto.randomBytes(8).toString('hex')}`)
-    } else {
-      formData.append('upload_preset', uploadPreset)
-    }
-
-    const headers = isConfigured
-      ? {
-          Authorization: createCloudinaryAuthHeader(apiKey, apiSecret),
-        }
-      : {}
-
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'POST',
-      headers,
-      body: formData,
-    })
-
-    const uploadResult = await uploadResponse.json().catch(() => null)
-
-    if (!uploadResponse.ok) {
-      const errorMessage = uploadResult?.error?.message || 'Cloudinary upload failed.'
-      response.status(uploadResponse.status).json({ error: errorMessage })
+    if (!parsedImage) {
+      response.status(400).json({ error: 'A valid base64 image data URL is required.' })
       return
     }
 
+    const db = await getMongoDatabase()
+    const uploadResult = await db.collection('product_images').insertOne({
+      imageData,
+      fileName: typeof fileName === 'string' ? fileName : '',
+      mimeType: typeof mimeType === 'string' && mimeType ? mimeType : parsedImage.mimeType,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+
+    const imageUrl = `/api/upload-product-image?id=${uploadResult.insertedId.toString()}`
+
     response.status(200).json({
-      secure_url: uploadResult?.secure_url,
-      url: uploadResult?.url,
-      public_id: uploadResult?.public_id,
+      secure_url: imageUrl,
+      url: imageUrl,
+      public_id: uploadResult.insertedId.toString(),
       original_filename: fileName,
       mime_type: mimeType,
-      provider: isConfigured ? 'cloudinary' : 'cloudinary-demo',
+      provider: 'mongodb-atlas',
     })
   } catch (error) {
     response.status(500).json({

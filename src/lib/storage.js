@@ -2,6 +2,7 @@ const PRODUCTS_KEY = 'luxe-haven-products'
 const DELETED_PRODUCTS_KEY = 'luxe-haven-deleted-products'
 const ADMIN_SESSION_KEY = 'luxe-haven-admin-session'
 const PRODUCTS_CHANGED_EVENT = 'luxe-haven-products-changed'
+const PRODUCTS_SYNC_KEY = 'luxe-haven-products-sync'
 
 function readJson(key, fallback) {
   if (typeof window === 'undefined') return fallback
@@ -21,6 +22,7 @@ function writeJson(key, value) {
 
 function emitProductsChanged() {
   if (typeof window === 'undefined') return
+  window.localStorage.setItem(PRODUCTS_SYNC_KEY, String(Date.now()))
   window.dispatchEvent(new Event(PRODUCTS_CHANGED_EVENT))
 }
 
@@ -104,3 +106,7 @@ export function clearAdminSession() {
 }
 
 export { PRODUCTS_CHANGED_EVENT }
+
+export function notifyProductsChanged() {
+  emitProductsChanged()
+}

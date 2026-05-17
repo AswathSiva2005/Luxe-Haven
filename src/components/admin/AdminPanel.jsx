@@ -7,6 +7,7 @@ import {
   loadAdminSession,
   saveAdminSession,
 } from '../../lib/storage'
+import { loginAdmin } from '../../services/adminService'
 import {
   deleteAdminProduct,
   editAdminProduct,
@@ -15,11 +16,6 @@ import {
   saveAdminProduct,
 } from '../../services/productsService'
 import { uploadProductImage } from '../../services/imageUploadService'
-
-const demoCredentials = {
-  username: 'admin',
-  password: 'luxe123',
-}
 
 const sizeOptions = ['S', 'M', 'L', 'XL', 'XXL']
 
@@ -53,7 +49,7 @@ const initialFormState = {
 
 export function AdminPanel() {
   const [auth, setAuth] = useState(() => loadAdminSession())
-  const [credentials, setCredentials] = useState({ username: '', password: '' })
+  const [credentials, setCredentials] = useState({ identifier: '', password: '' })
   const [form, setForm] = useState(initialFormState)
   const [products, setProducts] = useState([])
   const [editingId, setEditingId] = useState('')
@@ -65,21 +61,23 @@ export function AdminPanel() {
 
   const totalProducts = useMemo(() => products.length, [products])
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault()
 
-    if (
-      credentials.username.trim() === demoCredentials.username &&
-      credentials.password.trim() === demoCredentials.password
-    ) {
-      const session = { username: credentials.username.trim() }
+    try {
+      const admin = await loginAdmin(credentials.identifier.trim(), credentials.password)
+      const session = {
+        username: admin.username,
+        email: admin.email,
+      }
+
       setAuth(session)
       setMessage('Admin access granted.')
       saveAdminSession(session)
       return
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Invalid admin credentials.')
     }
-
-    setMessage('Invalid admin credentials. Use admin / luxe123 for this demo.')
   }
 
   const handleLogout = () => {
@@ -103,25 +101,25 @@ export function AdminPanel() {
       ),
     )
       .then((uploadedImages) => {
-      setForm((current) => {
-        const mergedImages = [...current.images, ...uploadedImages.filter(Boolean)].filter(Boolean)
-        const uniqueOrderedImages = []
+        setForm((current) => {
+          const mergedImages = [...current.images, ...uploadedImages.filter(Boolean)].filter(Boolean)
+          const uniqueOrderedImages = []
 
-        for (const image of mergedImages) {
-          if (!uniqueOrderedImages.includes(image)) {
-            uniqueOrderedImages.push(image)
+          for (const image of mergedImages) {
+            if (!uniqueOrderedImages.includes(image)) {
+              uniqueOrderedImages.push(image)
+            }
+            if (uniqueOrderedImages.length >= MAX_PRODUCT_IMAGES) {
+              break
+            }
           }
-          if (uniqueOrderedImages.length >= MAX_PRODUCT_IMAGES) {
-            break
-          }
-        }
 
-        return {
-          ...current,
-          images: uniqueOrderedImages,
-          image: uniqueOrderedImages[0] || current.image,
-        }
-      })
+          return {
+            ...current,
+            images: uniqueOrderedImages,
+            image: uniqueOrderedImages[0] || current.image,
+          }
+        })
       })
       .catch((error) => {
         setMessage(error instanceof Error ? error.message : 'Image upload failed.')
@@ -159,7 +157,7 @@ export function AdminPanel() {
     }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     const normalizedDraft = normalizeProduct({
@@ -171,18 +169,23 @@ export function AdminPanel() {
       source: 'admin',
     })
 
-    const nextProduct = editingId
-      ? editAdminProduct(editingId, normalizedDraft)
-      : saveAdminProduct(normalizedDraft)
+    try {
+      const nextProduct = editingId
+        ? await editAdminProduct(editingId, normalizedDraft)
+        : await saveAdminProduct(normalizedDraft)
 
-    fetchAdminProducts().then(setProducts)
-    setForm(initialFormState)
-    setEditingId('')
-    setMessage(
-      editingId
-        ? `Updated ${nextProduct.name}.`
-        : 'Product saved to public image storage. It now appears on the public products page.',
-    )
+      const nextProducts = await fetchAdminProducts()
+      setProducts(nextProducts)
+      setForm(initialFormState)
+      setEditingId('')
+      setMessage(
+        editingId
+          ? `Updated ${nextProduct.name}.`
+          : 'Product saved to MongoDB Atlas. It now appears on the public products page.',
+      )
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not save product.')
+    }
   }
 
   const handleEditProduct = (product) => {
@@ -224,18 +227,23 @@ export function AdminPanel() {
     setMessage('Edit cancelled.')
   }
 
-  const handleDeleteProduct = (productId) => {
+  const handleDeleteProduct = async (productId) => {
     const confirmed = window.confirm('Delete this product? This will remove it from the public portfolio view.')
     if (!confirmed) {
       return
     }
 
-    deleteAdminProduct(productId)
-    fetchAdminProducts().then(setProducts)
-    if (editingId === productId) {
-      handleCancelEdit()
+    try {
+      await deleteAdminProduct(productId)
+      const nextProducts = await fetchAdminProducts()
+      setProducts(nextProducts)
+      if (editingId === productId) {
+        handleCancelEdit()
+      }
+      setMessage('Product deleted.')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not delete product.')
     }
-    setMessage('Product deleted.')
   }
 
   if (!auth) {
@@ -256,12 +264,12 @@ export function AdminPanel() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <label className="block text-sm text-white/80">
-              Username
+              Username or email
               <input
-                value={credentials.username}
-                onChange={(event) => setCredentials((current) => ({ ...current, username: event.target.value }))}
+                value={credentials.identifier}
+                onChange={(event) => setCredentials((current) => ({ ...current, identifier: event.target.value }))}
                 className="mt-2 w-full rounded-xl border border-white/15 bg-black/70 px-4 py-3 outline-none transition focus:border-gold-300"
-                placeholder="admin"
+                placeholder="admin or admin@luxehaven.com"
               />
             </label>
             <label className="block text-sm text-white/80">
@@ -280,7 +288,7 @@ export function AdminPanel() {
           </form>
 
           <p className="mt-4 text-sm text-white/60">
-            Demo access only. Use <span className="text-gold-200">admin / luxe123</span>.
+            Admin records are stored in MongoDB Atlas database <span className="text-gold-200">luxe haven</span>.
           </p>
           {message ? <p className="mt-3 text-sm text-gold-200">{message}</p> : null}
         </div>
@@ -297,9 +305,7 @@ export function AdminPanel() {
             <h1 className="font-display mt-2 text-3xl uppercase tracking-[0.08em] text-white">
               Luxe Haven Admin
             </h1>
-            <p className="mt-2 text-sm text-white/60">
-              {totalProducts} products available in local storage.
-            </p>
+            <p className="mt-2 text-sm text-white/60">{totalProducts} products available in MongoDB Atlas.</p>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut size={14} />
@@ -497,16 +503,21 @@ export function AdminPanel() {
               Simple manual workflow
             </h2>
             <ul className="mt-4 space-y-3 text-sm text-white/70">
-              <li>1. Log in on /admin using the demo credentials.</li>
-              <li>2. Fill the product form with name, image upload, MRP, sale price, color, and sizes.</li>
-              <li>3. Use Edit on any saved item to load it back into the form and update it.</li>
-              <li>4. Save the product, then open /#products to see it on the public site.</li>
-              <li>5. Logout when finished.</li>
+              <li>1. Log in on /admin with a MongoDB Atlas admin record.</li>
+              <li>2. Keep the admin username and email unique in Compass; store the password as plain text.</li>
+              <li>3. Fill the product form with name, image upload, MRP, sale price, color, and sizes.</li>
+              <li>4. Use Edit on any saved item to load it back into the form and update it.</li>
+              <li>5. Save the product, then open /#products to see it on the public site.</li>
             </ul>
             <div className="mt-6 rounded-2xl border border-gold-300/20 bg-black/40 p-4 text-sm text-white/70">
               Public site route: <span className="text-gold-200">http://localhost:5173/#products</span>
               <br />
               Admin route: <span className="text-gold-200">http://localhost:5173/admin</span>
+            </div>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/65">
+              Atlas collection for admin logins: <span className="text-gold-200">admins</span>
+              <br />
+              Atlas collection for uploaded product images: <span className="text-gold-200">product_images</span>
             </div>
           </div>
         </div>
