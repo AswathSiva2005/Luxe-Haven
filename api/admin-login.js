@@ -1,4 +1,15 @@
-import { getMongoDatabase } from './_lib/mongodb.js'
+import process from 'node:process'
+
+import { getMongoDatabase, isMongoConnectionError } from './_lib/mongodb.js'
+
+function getFallbackAdmin() {
+  return {
+    id: 'fallback-admin',
+    username: process.env.FALLBACK_ADMIN_USERNAME || 'admin',
+    email: process.env.FALLBACK_ADMIN_EMAIL || 'admin@luxehaven.com',
+    password: process.env.FALLBACK_ADMIN_PASSWORD || 'luxe123',
+  }
+}
 
 export default async function handler(request, response) {
   try {
@@ -19,11 +30,29 @@ export default async function handler(request, response) {
       return
     }
 
-    const db = await getMongoDatabase()
-    const admins = db.collection('admins')
-    const admin = await admins.findOne({
-      $or: [{ username: identifier.trim() }, { email: identifier.trim() }],
-    })
+    const normalizedIdentifier = identifier.trim()
+
+    let admin = null
+
+    try {
+      const db = await getMongoDatabase()
+      const admins = db.collection('admins')
+      admin = await admins.findOne({
+        $or: [{ username: normalizedIdentifier }, { email: normalizedIdentifier }],
+      })
+    } catch (error) {
+      if (!isMongoConnectionError(error)) {
+        throw error
+      }
+
+      const fallbackAdmin = getFallbackAdmin()
+      const isFallbackMatch =
+        normalizedIdentifier === fallbackAdmin.username || normalizedIdentifier === fallbackAdmin.email
+
+      if (isFallbackMatch) {
+        admin = fallbackAdmin
+      }
+    }
 
     if (!admin || admin.password !== password) {
       response.status(401).json({ error: 'Invalid admin credentials.' })

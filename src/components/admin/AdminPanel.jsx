@@ -7,7 +7,6 @@ import {
   loadAdminSession,
   saveAdminSession,
 } from '../../lib/storage'
-import { loginAdmin } from '../../services/adminService'
 import {
   deleteAdminProduct,
   editAdminProduct,
@@ -16,6 +15,11 @@ import {
   saveAdminProduct,
 } from '../../services/productsService'
 import { uploadProductImage } from '../../services/imageUploadService'
+
+const demoCredentials = {
+  username: 'admin',
+  password: 'luxe123',
+}
 
 const sizeOptions = ['S', 'M', 'L', 'XL', 'XXL']
 
@@ -64,20 +68,20 @@ export function AdminPanel() {
   const handleLogin = async (event) => {
     event.preventDefault()
 
-    try {
-      const admin = await loginAdmin(credentials.identifier.trim(), credentials.password)
+    if (
+      credentials.identifier.trim() === demoCredentials.username &&
+      credentials.password.trim() === demoCredentials.password
+    ) {
       const session = {
-        username: admin.username,
-        email: admin.email,
+        username: demoCredentials.username,
       }
-
       setAuth(session)
       setMessage('Admin access granted.')
       saveAdminSession(session)
       return
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Invalid admin credentials.')
     }
+
+    setMessage('Invalid admin credentials. Use admin / luxe123.')
   }
 
   const handleLogout = () => {
@@ -181,7 +185,7 @@ export function AdminPanel() {
       setMessage(
         editingId
           ? `Updated ${nextProduct.name}.`
-          : 'Product saved to MongoDB Atlas. It now appears on the public products page.',
+          : 'Product saved to local storage. It now appears on the public products page.',
       )
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not save product.')
@@ -264,12 +268,12 @@ export function AdminPanel() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <label className="block text-sm text-white/80">
-              Username or email
+              Username
               <input
                 value={credentials.identifier}
                 onChange={(event) => setCredentials((current) => ({ ...current, identifier: event.target.value }))}
                 className="mt-2 w-full rounded-xl border border-white/15 bg-black/70 px-4 py-3 outline-none transition focus:border-gold-300"
-                placeholder="admin or admin@luxehaven.com"
+                placeholder="admin"
               />
             </label>
             <label className="block text-sm text-white/80">
@@ -287,9 +291,7 @@ export function AdminPanel() {
             </Button>
           </form>
 
-          <p className="mt-4 text-sm text-white/60">
-            Admin records are stored in MongoDB Atlas database <span className="text-gold-200">luxe haven</span>.
-          </p>
+          <p className="mt-4 text-sm text-white/60">Use demo admin credentials: <span className="text-gold-200">admin / luxe123</span>.</p>
           {message ? <p className="mt-3 text-sm text-gold-200">{message}</p> : null}
         </div>
       </section>
@@ -305,7 +307,7 @@ export function AdminPanel() {
             <h1 className="font-display mt-2 text-3xl uppercase tracking-[0.08em] text-white">
               Luxe Haven Admin
             </h1>
-            <p className="mt-2 text-sm text-white/60">{totalProducts} products available in MongoDB Atlas.</p>
+            <p className="mt-2 text-sm text-white/60">{totalProducts} products available in local storage.</p>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}>
             <LogOut size={14} />
@@ -503,9 +505,9 @@ export function AdminPanel() {
               Simple manual workflow
             </h2>
             <ul className="mt-4 space-y-3 text-sm text-white/70">
-              <li>1. Log in on /admin with a MongoDB Atlas admin record.</li>
-              <li>2. Keep the admin username and email unique in Compass; store the password as plain text.</li>
-              <li>3. Fill the product form with name, image upload, MRP, sale price, color, and sizes.</li>
+              <li>1. Log in on /admin using admin / luxe123.</li>
+              <li>2. Upload product images directly to Cloudinary.</li>
+              <li>3. Fill the product form with name, MRP, sale price, color, and sizes.</li>
               <li>4. Use Edit on any saved item to load it back into the form and update it.</li>
               <li>5. Save the product, then open /#products to see it on the public site.</li>
             </ul>
@@ -515,9 +517,9 @@ export function AdminPanel() {
               Admin route: <span className="text-gold-200">http://localhost:5173/admin</span>
             </div>
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-white/65">
-              Atlas collection for admin logins: <span className="text-gold-200">admins</span>
+              Images: <span className="text-gold-200">Cloudinary URL</span>
               <br />
-              Atlas collection for uploaded product images: <span className="text-gold-200">product_images</span>
+              Product details: <span className="text-gold-200">browser localStorage</span>
             </div>
           </div>
         </div>

@@ -1,5 +1,10 @@
 import { createProductArtwork } from '../lib/placeholders'
-import { notifyProductsChanged } from '../lib/storage'
+import {
+  loadStoredProducts,
+  removeStoredProduct,
+  saveStoredProducts,
+  updateStoredProduct,
+} from '../lib/storage'
 
 const priceBrackets = {
   budget: [0, 1000],
@@ -8,11 +13,13 @@ const priceBrackets = {
 }
 
 export async function fetchProducts() {
-  return requestProducts('GET')
+  const products = loadStoredProducts().map(normalizeProduct)
+  return Promise.resolve(products)
 }
 
 export async function fetchAdminProducts() {
-  return requestProducts('GET')
+  const products = loadStoredProducts().map(normalizeProduct)
+  return Promise.resolve(products)
 }
 
 export function getFilterOptions(products, category) {
@@ -84,44 +91,25 @@ export function normalizeProduct(product) {
   }
 }
 
-async function requestProducts(method, body) {
-  const response = await fetch('/api/products', {
-    method,
-    headers: body
-      ? {
-          'Content-Type': 'application/json',
-        }
-      : {},
-    body: body ? JSON.stringify(body) : undefined,
-  })
-
-  const result = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    throw new Error(result?.error || 'Product request failed.')
-  }
-
-  if (Array.isArray(result)) {
-    return result.map(normalizeProduct)
-  }
-
-  return result ? normalizeProduct(result) : null
-}
-
 export async function saveAdminProduct(product) {
   const normalizedProduct = normalizeProduct(product)
-  const nextProduct = await requestProducts('POST', normalizedProduct)
-  notifyProductsChanged()
-  return nextProduct
+
+  const currentProducts = loadStoredProducts().map(normalizeProduct)
+  const nextProducts = currentProducts.some((existing) => existing.id === normalizedProduct.id)
+    ? currentProducts.map((existing) => (existing.id === normalizedProduct.id ? normalizedProduct : existing))
+    : [...currentProducts, normalizedProduct]
+
+  saveStoredProducts(nextProducts)
+  return Promise.resolve(normalizedProduct)
 }
 
 export async function editAdminProduct(productId, updates) {
-  const nextProduct = await requestProducts('PATCH', { id: productId, ...normalizeProduct(updates) })
-  notifyProductsChanged()
-  return nextProduct
+  const nextProduct = normalizeProduct({ id: productId, ...updates })
+  updateStoredProduct(productId, nextProduct)
+  return Promise.resolve(nextProduct)
 }
 
 export async function deleteAdminProduct(productId) {
-  await requestProducts('DELETE', { id: productId })
-  notifyProductsChanged()
+  removeStoredProduct(productId)
+  return Promise.resolve({ deleted: true })
 }

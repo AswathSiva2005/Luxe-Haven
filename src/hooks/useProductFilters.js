@@ -23,11 +23,17 @@ export function useProductFilters() {
     let isActive = true
 
     const loadProducts = () => {
-      fetchProducts().then((products) => {
-        if (isActive) {
-          setAllProducts(products)
-        }
-      })
+      fetchProducts()
+        .then((products) => {
+          if (isActive) {
+            setAllProducts(products)
+          }
+        })
+        .catch(() => {
+          if (isActive) {
+            setAllProducts([])
+          }
+        })
     }
 
     loadProducts()

@@ -23,10 +23,18 @@ async function connectToMongo() {
   if (!globalForMongo.__luxeHavenMongo.clientPromise) {
     const client = new MongoClient(mongoUri)
 
-    globalForMongo.__luxeHavenMongo.clientPromise = client.connect().then((connectedClient) => {
-      globalForMongo.__luxeHavenMongo.client = connectedClient
-      return connectedClient
-    })
+    globalForMongo.__luxeHavenMongo.clientPromise = client
+      .connect()
+      .then((connectedClient) => {
+        globalForMongo.__luxeHavenMongo.client = connectedClient
+        return connectedClient
+      })
+      .catch(async (error) => {
+        globalForMongo.__luxeHavenMongo.clientPromise = null
+        globalForMongo.__luxeHavenMongo.client = null
+        await client.close().catch(() => {})
+        throw error
+      })
   }
 
   const client = await globalForMongo.__luxeHavenMongo.clientPromise
@@ -90,4 +98,17 @@ export async function getMongoDatabase() {
   await ensureMongoIndexes(db)
   await seedDefaultAdmin(db)
   return db
+}
+
+export function isMongoConnectionError(error) {
+  const message = error instanceof Error ? error.message : String(error || '')
+
+  return [
+    'querySrv',
+    'ENOTFOUND',
+    'ECONNREFUSED',
+    'MongoServerSelectionError',
+    'getaddrinfo',
+    'timed out',
+  ].some((needle) => message.includes(needle))
 }

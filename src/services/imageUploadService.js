@@ -1,24 +1,29 @@
 export async function uploadProductImage(file) {
-  const imageData = await readFileAsDataUrl(file)
+  const cloudName = String(import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '').trim()
+  const uploadPreset = String(import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '').trim()
 
-  const response = await fetch('/api/upload-product-image', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      imageData,
-      fileName: file.name,
-      mimeType: file.type,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(errorText || 'Image upload failed.')
+  // Skip Cloudinary network calls when credentials are not configured.
+  if (!cloudName || !uploadPreset || cloudName.toLowerCase() === 'demo') {
+    return readFileAsDataUrl(file)
   }
 
-  const result = await response.json()
+  const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`
+  const formData = new FormData()
+
+  formData.append('file', file)
+  formData.append('upload_preset', uploadPreset)
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  })
+
+  const result = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    return readFileAsDataUrl(file)
+  }
+
   if (!result?.secure_url) {
     throw new Error('Image upload succeeded but no public URL was returned.')
   }

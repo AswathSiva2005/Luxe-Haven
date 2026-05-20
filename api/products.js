@@ -1,7 +1,27 @@
 import { ObjectId } from 'mongodb'
 
-import { getMongoDatabase } from './_lib/mongodb.js'
+import { getMongoDatabase, isMongoConnectionError } from './_lib/mongodb.js'
 import { normalizeProductDocument, normalizeProductInput } from './_lib/productNormalization.js'
+
+const globalForProducts = globalThis
+
+if (!globalForProducts.__luxeHavenFallbackProducts) {
+  globalForProducts.__luxeHavenFallbackProducts = []
+}
+
+function getFallbackProducts() {
+  return globalForProducts.__luxeHavenFallbackProducts
+}
+
+function createFallbackId() {
+  return `fallback-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function readRawId(request) {
+  const queryId = request.query?.id
+  const bodyId = request.body?.id
+  return typeof queryId === 'string' ? queryId : typeof bodyId === 'string' ? bodyId : ''
+}
 
 function parseId(id) {
   if (typeof id !== 'string' || !id.trim()) {
@@ -16,14 +36,93 @@ function parseId(id) {
 }
 
 function readId(request) {
-  const queryId = request.query?.id
-  const bodyId = request.body?.id
-  return parseId(typeof queryId === 'string' ? queryId : typeof bodyId === 'string' ? bodyId : '')
+  return parseId(readRawId(request))
+}
+
+function toFallbackProduct(document) {
+  const normalized = normalizeProductInput(document)
+
+  return {
+    id: document.id || createFallbackId(),
+    ...normalized,
+    createdAt: document.createdAt || new Date(),
+    updatedAt: document.updatedAt || new Date(),
+  }
 }
 
 export default async function handler(request, response) {
   try {
-    const db = await getMongoDatabase()
+    let db
+
+    try {
+      db = await getMongoDatabase()
+    } catch (error) {
+      if (isMongoConnectionError(error)) {
+        const fallbackProducts = getFallbackProducts()
+
+        if (request.method === 'GET') {
+          response.status(200).json([...fallbackProducts].reverse())
+          return
+        }
+
+        if (request.method === 'POST') {
+          const created = toFallbackProduct(request.body ?? {})
+          fallbackProducts.push(created)
+          response.status(201).json(created)
+          return
+        }
+
+        if (request.method === 'PATCH') {
+          const rawId = readRawId(request)
+          if (!rawId) {
+            response.status(400).json({ error: 'A valid product id is required.' })
+            return
+          }
+
+          const index = fallbackProducts.findIndex((product) => product.id === rawId)
+          if (index === -1) {
+            response.status(404).json({ error: 'Product not found.' })
+            return
+          }
+
+          const nextProduct = toFallbackProduct({
+            ...fallbackProducts[index],
+            ...(request.body ?? {}),
+            id: rawId,
+            createdAt: fallbackProducts[index].createdAt,
+            updatedAt: new Date(),
+          })
+
+          fallbackProducts[index] = nextProduct
+          response.status(200).json(nextProduct)
+          return
+        }
+
+        if (request.method === 'DELETE') {
+          const rawId = readRawId(request)
+          if (!rawId) {
+            response.status(400).json({ error: 'A valid product id is required.' })
+            return
+          }
+
+          const nextProducts = fallbackProducts.filter((product) => product.id !== rawId)
+          if (nextProducts.length === fallbackProducts.length) {
+            response.status(404).json({ error: 'Product not found.' })
+            return
+          }
+
+          globalForProducts.__luxeHavenFallbackProducts = nextProducts
+          response.status(200).json({ deleted: true })
+          return
+        }
+
+        response.status(405).json({ error: 'Method not allowed' })
+        return
+      }
+
+      throw error
+    }
+
     const products = db.collection('products')
 
     if (request.method === 'GET') {

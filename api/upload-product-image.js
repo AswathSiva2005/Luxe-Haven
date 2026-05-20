@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 
 import { ObjectId } from 'mongodb'
 
-import { getMongoDatabase } from './_lib/mongodb.js'
+import { getMongoDatabase, isMongoConnectionError } from './_lib/mongodb.js'
 
 function parseDataUrl(imageData) {
   const match = /^data:([^;]+);base64,(.+)$/.exec(imageData)
@@ -34,7 +34,19 @@ async function streamStoredImage(request, response) {
     return
   }
 
-  const db = await getMongoDatabase()
+  let db
+
+  try {
+    db = await getMongoDatabase()
+  } catch (error) {
+    if (isMongoConnectionError(error)) {
+      response.status(404).json({ error: 'Image is not available while MongoDB is offline.' })
+      return
+    }
+
+    throw error
+  }
+
   const storedImage = await db.collection('product_images').findOne({ _id: objectId })
 
   if (!storedImage) {
@@ -80,24 +92,41 @@ export default async function handler(request, response) {
       return
     }
 
-    const db = await getMongoDatabase()
-    const uploadResult = await db.collection('product_images').insertOne({
-      imageData,
-      fileName: typeof fileName === 'string' ? fileName : '',
-      mimeType: typeof mimeType === 'string' && mimeType ? mimeType : parsedImage.mimeType,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
+    let imageUrl
+    let provider
+    let publicId
 
-    const imageUrl = `/api/upload-product-image?id=${uploadResult.insertedId.toString()}`
+    try {
+      const db = await getMongoDatabase()
+      const uploadResult = await db.collection('product_images').insertOne({
+        imageData,
+        fileName: typeof fileName === 'string' ? fileName : '',
+        mimeType: typeof mimeType === 'string' && mimeType ? mimeType : parsedImage.mimeType,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      imageUrl = `/api/upload-product-image?id=${uploadResult.insertedId.toString()}`
+      provider = 'mongodb-atlas'
+      publicId = uploadResult.insertedId.toString()
+    } catch (error) {
+      if (!isMongoConnectionError(error)) {
+        throw error
+      }
+
+      // Fallback to direct data URL when MongoDB is unreachable.
+      imageUrl = imageData
+      provider = 'inline-fallback'
+      publicId = `inline-${Date.now()}`
+    }
 
     response.status(200).json({
       secure_url: imageUrl,
       url: imageUrl,
-      public_id: uploadResult.insertedId.toString(),
+      public_id: publicId,
       original_filename: fileName,
       mime_type: mimeType,
-      provider: 'mongodb-atlas',
+      provider,
     })
   } catch (error) {
     response.status(500).json({
